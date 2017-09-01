@@ -1,88 +1,90 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
+
 
 public class FastCollinearPoints {
-    private LineSegment[] segments;
-    private ArrayList<LineSegment> actualSegments;
-    private ArrayList<Point> firstPoint;
-    private ArrayList<Point> lastPoint;
-    private Point[] pointArray;
 
-    public FastCollinearPoints(Point[] points) { // finds all line segments containing 4 or more points
-        for (int x = 0; x < points.length - 1; x++) {
-            for (int y = x + 1; y < points.length; y++) {
-                if (points[x].compareTo(points[y]) == 0) {
-                    throw new IllegalArgumentException("Dublicated points");
+    private HashMap<Double, List<Point>> actualSegments = new HashMap<>();
+    private List<LineSegment> segments = new ArrayList<>();
+
+
+    public FastCollinearPoints(Point[] points) {
+        if (points == null || points[0] == null) {  // better do with try and catch but unittest won't let me.
+            throw new IllegalArgumentException("Argumet can't be null.");
+        }
+        for (int i = 0; i < points.length - 1; i++) {
+            for (int j = i + 1; j < points.length; j++) {
+
+                if (points[j] == null || points[i] == null || points[i].compareTo(points[j]) == 0) {
+                    throw new IllegalArgumentException("Points can't be null or dublicated.");
                 }
             }
         }
-        actualSegments = new ArrayList<>();
-        firstPoint = new ArrayList<>();
-        lastPoint = new ArrayList<>();
-        int size = points.length;
-        pointArray = Arrays.copyOf(points, size);
-        Arrays.sort(pointArray);
+        Point[] pointsCopy = Arrays.copyOf(points, points.length);
+        for (Point startPoint : points) {
+            Arrays.sort(pointsCopy, startPoint.slopeOrder());
+            List<Point> slopePoints = new ArrayList<>();
+            double slope = 0;
+            double previousSlope = Double.NEGATIVE_INFINITY;
 
-        for (int x = 0, coefficient = 1; x < size - 1; x++, coefficient++) {
-            int newSize = size - coefficient;
-            HashMap<Integer, Double> slopeMap = new HashMap<>();
-            Double[] slopeDouble = new Double[size - coefficient];
-            for (int id = coefficient; id < size; id++) {
-                double slopy = pointArray[x].slopeTo(pointArray[id]);
-                slopeMap.put(id, slopy);
-                slopeDouble[id - coefficient] = slopy;
-            }
-            for (int i = 0; i < newSize; i++) {
-                int count = 0;
-                if (slopeDouble[i] != null) {
-                    double compare = slopeDouble[i].doubleValue();
-                    for (int j = 0; j < newSize; j++) {
-                        if (slopeDouble[j] != null && compare == slopeDouble[j]) {
-                            slopeDouble[j] = null;
-                            count++;
-                        }
+            for (int i = 1; i < pointsCopy.length; i++) {
+                slope = startPoint.slopeTo(pointsCopy[i]);
+                if (slope == previousSlope) {
+                    slopePoints.add(pointsCopy[i]);
+                } else {
+                    if (slopePoints.size() >= 3) {
+                        slopePoints.add(startPoint);
+                        addSegment(slopePoints, previousSlope);
                     }
-                    if (count >= 3) {
-                        addSegment(size, slopeMap, compare, coefficient);
-                    }
+                    slopePoints.clear();
+                    slopePoints.add(pointsCopy[i]);
                 }
+                previousSlope = slope;
+            }
+            if (slopePoints.size() >= 3) {
+                slopePoints.add(startPoint);
+                addSegment(slopePoints, slope);
             }
         }
-        segments = new LineSegment[actualSegments.size()];
-        segments = actualSegments.toArray(segments);
     }
 
-    private void addSegment(int size, HashMap<Integer, Double> slopeMap, double compare, int coefficient) {
-        int first = -1;
-        int last = -1;
-        for (; coefficient < size; coefficient++) {
-            if (compare == slopeMap.get(coefficient)) {
-                if (first == -1) {
-                    first = coefficient;
-                }
-                last = coefficient;
-            }
-        }
-        if (!firstPoint.isEmpty()) { //check if it isn't subsegment
-            for (int index = 0; index < firstPoint.size(); index++) {
-                if (pointArray[first] == firstPoint.get(index) ||
-                        pointArray[first] == lastPoint.get(index) ||
-                        pointArray[first].slopeTo(firstPoint.get(index)) == pointArray[first].slopeTo(lastPoint.get(index))) {
+    private void addSegment(List<Point> slopePoints, double slope) {
+        List<Point> endPoints = actualSegments.get(slope);
+        Collections.sort(slopePoints);
+
+        Point startPoint = slopePoints.get(0);
+        Point endPoint = slopePoints.get(slopePoints.size() - 1);
+
+        if (endPoints == null) {
+            endPoints = new ArrayList<>();
+            endPoints.add(endPoint);
+            actualSegments.put(slope, endPoints);
+            segments.add(new LineSegment(startPoint, endPoint));
+        } else {
+            for (Point currentEndPoint : endPoints) {
+                if (currentEndPoint.compareTo(endPoint) == 0) {
                     return;
                 }
             }
+            endPoints.add(endPoint);
+            segments.add(new LineSegment(startPoint, endPoint));
         }
-        firstPoint.add(pointArray[first]);
-        lastPoint.add(pointArray[last]);
-        actualSegments.add(new LineSegment(pointArray[first], pointArray[last]));
     }
 
-    public int numberOfSegments() {    // the number of line segments
-        return segments.length;
+
+    public int numberOfSegments() {
+        return segments.size();
     }
 
-    public LineSegment[] segments() {    // the line segments
-        return Arrays.copyOf(segments, numberOfSegments());
+    public LineSegment[] segments() {
+        return segments.toArray(new LineSegment[segments.size()]);
     }
+
+    public static void main(String[] args) {
+        Point a = (null);
+        Point b = new Point(1, 2);
+        Point[] zx = new Point[]{null};
+        FastCollinearPoints pp = new FastCollinearPoints(zx);
+    }
+
+
 }

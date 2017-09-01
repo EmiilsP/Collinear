@@ -5,14 +5,17 @@ public class BruteCollinearPoints {
     private LineSegment[] segments;
 
     public BruteCollinearPoints(Point[] points) {    // finds all line segments containing 4 points
-        for (int x = 0; x < points.length - 1; x++) {
-            for (int y = x + 1; y < points.length; y++) {
-                if (points[x].compareTo(points[y]) == 0) {
-                    throw new IllegalArgumentException("Dublicated points");
+        if (points == null || points[0] == null) {// better do with try and catch but unittest won't let me.
+            throw new IllegalArgumentException("Argumet can't be null.");
+        }
+        for (int i = 0; i < points.length - 1; i++) {
+            for (int j = i + 1; j < points.length; j++) {
+
+                if (points[j] == null || points[i] == null || points[i].compareTo(points[j]) == 0) {
+                    throw new IllegalArgumentException("Points can't be null or dublicated.");
                 }
             }
         }
-
         ArrayList<LineSegment> actualSegments = new ArrayList<>();
         Point[] pointArray = Arrays.copyOf(points, points.length);
         Arrays.sort(pointArray);
@@ -25,7 +28,6 @@ public class BruteCollinearPoints {
                         double thirdSlope = pointArray[r].slopeTo(pointArray[s]);
                         if (firstSlope == secondSlope && secondSlope == thirdSlope) {
                             actualSegments.add(new LineSegment(pointArray[p], pointArray[s]));
-
                         }
                     }
                 }
